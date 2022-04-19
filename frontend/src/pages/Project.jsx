@@ -6,16 +6,29 @@ import ModalTaskForm from "../components/ModalTaskForm"
 import Task from '../components/Task'
 import Partner from '../components/Partner'
 import Spinner from '../components/Spinner'
+import io from 'socket.io-client'
+let socket
 
 const Project = () => {
 
   const params = useParams()
-  const { getProject, project, handleModalTaskForm, load } = useProjects()
+  const { getProject, project, handleModalTaskForm, load, submitTasksProject } = useProjects()
   const admin = useAdmin()
 
   useEffect( () => {
     getProject(params.id)
   }, [])
+
+  useEffect( () => {
+    socket = io(import.meta.env.VITE_BACKEND_URL)
+    socket.emit('open project', params.id)
+  }, [])
+
+  useEffect( () => {
+    socket.on('added task', (newTask) => {
+      if(newTask.project === project._id) submitTasksProject(newTask)
+    })
+  })
 
   const { name } = project
 

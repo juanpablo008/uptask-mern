@@ -3,6 +3,8 @@ import clientAxios from "../config/clientAxios"
 import { useNavigate } from "react-router-dom"
 import useAuth from "../hooks/useAuth"
 import Swal from 'sweetalert2'
+import io from 'socket.io-client'
+let socket
 
 const ProjectsContext = createContext()
 
@@ -47,6 +49,10 @@ const ProjectsProvider = ({ children }) => {
     getProjects()
   }, [auth])
 
+  useEffect(() => {
+    socket = io(import.meta.env.VITE_BACKEND_URL)
+  }, [])
+
   const showAlertConfirm = async  alert => {
     let response
     await Swal.fire(alert).then((result) => {
@@ -87,6 +93,13 @@ const ProjectsProvider = ({ children }) => {
 
   const handleBrowser = () => {
     setBrowser(!browser)
+  }
+
+  // Socket io 
+  const submitTasksProject = async (task) => {
+    const updatedProject = { ...project }
+    updatedProject.tasks = [...updatedProject.tasks, task]
+    setProject(updatedProject)
   }
 
   const submitTask = async task => {
@@ -277,13 +290,12 @@ const ProjectsProvider = ({ children }) => {
         icon: 'success'
       })
 
-      const updatedProject = { ...project }
-      updatedProject.tasks = [...project.tasks, data]
-      setProject(updatedProject)
-
       setTimeout(() => {
         setModalTaskForm(false)
       }, 1000);
+
+      // Socket io
+      socket.emit('new task', data)
 
     } catch (error) {
       console.log(error)  
@@ -487,7 +499,8 @@ const ProjectsProvider = ({ children }) => {
         deletePartner,
         changeTaskStatus,
         browser,
-        handleBrowser
+        handleBrowser,
+        submitTasksProject
       }}
     >
       {children}

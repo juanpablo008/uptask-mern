@@ -37,6 +37,30 @@ app.use("/api/tasks", taskRoutes)
 
 const PORT = process.env.PORT || 4000
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`)
+})
+
+// Socket.io
+
+import { Server } from "socket.io"
+const io = new Server(server, {
+  pingInterval: 60000,
+  cors: {
+    origin: process.env.FRONTEND_URL
+  }
+})
+
+io.on("connection", (socket) => {
+  console.log("Connected to socket.io")
+
+  // Events socket.io
+  socket.on("open project", (projectId) => {
+    socket.join(projectId)
+  })
+
+  socket.on('new task', (task) => {
+    const project = task.project
+    socket.on(project).emit('added task', task)
+  })
 })
